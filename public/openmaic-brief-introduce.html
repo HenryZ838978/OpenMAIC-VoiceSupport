@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenMAIC Brief Introduce</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f6f8fc;
+      --panel: rgba(255, 255, 255, 0.86);
+      --border: #dfe7f3;
+      --text: #142033;
+      --muted: #5f6f87;
+      --faint: #95a4bb;
+      --brand: #5b6cff;
+      --brand-2: #7f8cff;
+      --cyan: #0ea5e9;
+      --teal: #14b8a6;
+      --violet: #7c3aed;
+      --gold: #f59e0b;
+      --red: #ef4444;
+      --success: #10b981;
+      --shadow: 0 20px 60px rgba(86, 110, 160, 0.12);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(91, 108, 255, 0.06), transparent 18%),
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 28%),
+        #fff;
+      color: var(--text);
+      font-family: "Segoe UI", "PingFang SC", "Noto Sans SC", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(91, 108, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91, 108, 255, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 90%);
+      pointer-events: none;
+    }
+    .deck { position: relative; width: 100%; height: 100%; }
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 48px 62px 78px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 28px;
+      opacity: 0;
+      transform: translateX(60px) scale(0.985);
+      pointer-events: none;
+      transition: all 0.42s ease;
+    }
+    .slide.active { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px;
+      border: 1px solid var(--border); background: rgba(255,255,255,0.84); color: var(--brand);
+      font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      box-shadow: 0 6px 20px rgba(91,108,255,0.08);
+    }
+    .title-wrap h1 { margin-top: 18px; font-size: 48px; line-height: 1.08; letter-spacing: -0.03em; }
+    .title-wrap p { margin-top: 14px; max-width: 760px; font-size: 18px; line-height: 1.6; color: var(--muted); }
+    .page-chip {
+      min-width: 84px; text-align: center; padding: 12px 16px; border-radius: 18px;
+      background: linear-gradient(135deg, rgba(91,108,255,0.1), rgba(14,165,233,0.08));
+      border: 1px solid var(--border); font-size: 12px; color: var(--muted); font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+    .content { display: grid; gap: 22px; min-height: 0; }
+    .grid-2 { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 22px; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      position: relative; overflow: hidden; border-radius: var(--radius); background: var(--panel);
+      border: 1px solid rgba(223,231,243,0.9); box-shadow: var(--shadow); backdrop-filter: blur(12px); padding: 22px;
+    }
+    .card::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.55), transparent 55%); pointer-events: none;
+    }
+    .card h2, .card h3 { position: relative; z-index: 1; }
+    .section-title {
+      font-size: 15px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--brand); margin-bottom: 16px;
+    }
+    .section-note { font-size: 13px; color: var(--muted); line-height: 1.55; }
+    .metric-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .metric {
+      padding: 16px 14px; border-radius: 18px; background: linear-gradient(180deg, #ffffff, #f9fbff);
+      border: 1px solid var(--border); text-align: center;
+    }
+    .metric .num { font-size: 34px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; color: var(--brand); }
+    .metric:nth-child(2) .num { color: var(--cyan); }
+    .metric:nth-child(3) .num { color: var(--teal); }
+    .metric:nth-child(4) .num { color: var(--violet); }
+    .metric .label {
+      margin-top: 8px; font-size: 11px; color: var(--muted); line-height: 1.35;
+      text-transform: uppercase; letter-spacing: 0.08em;
+    }
+    .flow { display: flex; align-items: stretch; gap: 12px; margin-top: 12px; }
+    .flow-node {
+      flex: 1; min-height: 148px; border-radius: 20px; border: 1px solid var(--border);
+      background: linear-gradient(180deg, #ffffff, #f7faff); padding: 18px 14px;
+      display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center;
+    }
+    .flow-node .icon {
+      width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center;
+      font-size: 24px; background: rgba(91,108,255,0.1); color: var(--brand);
+    }
+    .flow-node:nth-child(3n+2) .icon { background: rgba(14,165,233,0.1); color: var(--cyan); }
+    .flow-node:nth-child(3n+3) .icon { background: rgba(16,185,129,0.1); color: var(--success); }
+    .flow-node .name { margin-top: 12px; font-size: 15px; font-weight: 800; }
+    .flow-node .desc { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .flow-arrow {
+      width: 42px; flex: 0 0 42px; display: grid; place-items: center;
+      color: var(--faint); font-size: 22px; font-weight: 800;
+    }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .compare-block {
+      border-radius: 20px; border: 1px solid var(--border); background: linear-gradient(180deg, #fff, #f8fbff); padding: 18px;
+    }
+    .compare-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .compare-head strong { font-size: 15px; }
+    .pill { border-radius: 999px; padding: 6px 10px; font-size: 11px; font-weight: 700; }
+    .pill.red { background: rgba(239,68,68,0.1); color: var(--red); }
+    .pill.green { background: rgba(16,185,129,0.1); color: var(--success); }
+    .pill.gold { background: rgba(245,158,11,0.12); color: var(--gold); }
+    .pill.blue { background: rgba(14,165,233,0.12); color: var(--cyan); }
+    .mini-stack { display: grid; gap: 10px; }
+    .mini-card {
+      border-radius: 16px; border: 1px solid var(--border); background: #fff; padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .mini-card .dot {
+      width: 12px; height: 12px; border-radius: 999px; flex: 0 0 12px;
+      background: var(--brand); box-shadow: 0 0 0 6px rgba(91,108,255,0.08);
+    }
+    .mini-card:nth-child(2) .dot { background: var(--cyan); box-shadow: 0 0 0 6px rgba(14,165,233,0.08); }
+    .mini-card:nth-child(3) .dot { background: var(--teal); box-shadow: 0 0 0 6px rgba(20,184,166,0.08); }
+    .mini-card:nth-child(4) .dot { background: var(--violet); box-shadow: 0 0 0 6px rgba(124,58,237,0.08); }
+    .mini-card b { font-size: 13px; display: block; }
+    .mini-card span { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); }
+    .arch-svg, .timeline-svg { width: 100%; height: 100%; min-height: 300px; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 4px; }
+    .boundary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .boundary {
+      border-radius: 18px; border: 1px dashed var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,248,252,0.92));
+      padding: 16px; min-height: 130px;
+    }
+    .boundary h4 { font-size: 14px; margin-bottom: 12px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 8px 10px; border-radius: 999px; border: 1px solid var(--border); background: #fff;
+      font-size: 11px; color: var(--muted); font-weight: 600;
+    }
+    .nav {
+      position: fixed; bottom: 22px; right: 26px; display: flex; align-items: center; gap: 10px; z-index: 20;
+    }
+    .nav button {
+      width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--border);
+      background: rgba(255,255,255,0.92); color: var(--brand); font-size: 18px; font-weight: 800;
+      cursor: pointer; box-shadow: 0 8px 20px rgba(86,110,160,0.14);
+    }
+    .footer-hint {
+      position: fixed; bottom: 30px; left: 28px; z-index: 20; color: var(--faint);
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    @media (max-width: 1280px) {
+      .slide { padding: 36px 42px 74px; }
+      .title-wrap h1 { font-size: 40px; }
+      .metric .num { font-size: 28px; }
+      .flow-node { min-height: 132px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <section class="slide active">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">OpenMAIC x Realtime Assistant</div>
+          <h1>OpenMAIC 改造 Brief</h1>
+          <p>把超低延迟实时语音，从“插入课堂的第二个说话者”，重构成“与课堂并行协作的 AI 助教”。</p>
+        </div>
+        <div class="page-chip">01 / 05</div>
+      </div>
+      <div class="content">
+        <div class="metric-row">
+          <div class="metric"><div class="num">1</div><div class="label">产品角色重定义<br />客服语音 → 课堂助教</div></div>
+          <div class="metric"><div class="num">4</div><div class="label">核心状态机<br />idle / active / briefing / handoff</div></div>
+          <div class="metric"><div class="num">4</div><div class="label">Realtime Backends<br />VoxLabs / Doubao / OpenAI / Gemini</div></div>
+          <div class="metric"><div class="num">2</div><div class="label">上下文协议<br />session_config + update_context</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-title">Business Shift</div>
+            <div class="compare">
+              <div class="compare-block">
+                <div class="compare-head"><strong>Before</strong><span class="pill red">冲突</span></div>
+                <div class="mini-stack">
+                  <div class="mini-card"><div class="dot"></div><div><b>实时 WS 直接插课堂</b><span>回复只存在于语音栈</span></div></div>
+                  <div class="mini-card"><div class="dot"></div><div><b>多智能体继续说话</b><span>和 realtime TTS 叠播</span></div></div>
+                  <div class="mini-card"><div class="dot"></div><div><b>用户认知混乱</b><span>谁在回答、何时恢复课堂不清晰</span></div></div>
+                </div>
+              </div>
+              <div class="compare-block">
+                <div class="compare-head"><strong>After</strong><span class="pill green">协同</span></div>
+                <div class="mini-stack">
+                  <div class="mini-card"><div class="dot"></div><div><b>请教助教独立模式</b><span>显式开始 / 返回课堂</span></div></div>
+                  <div class="mini-card"><div class="dot"></div><div><b>课堂先暂停</b><span>释放音频地板、停止机械 TTS</span></div></div>
+                  <div class="mini-card"><div class="dot"></div><div><b>brief 回灌课堂</b><span>沿用原教师学生逻辑继续推进</span></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="section-title">What Changed</div>
+            <div class="flow">
+              <div class="flow-node"><div class="icon">🎧</div><div><div class="name">实时语音助教</div><div class="desc">低延迟私聊入口</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node"><div class="icon">⏸</div><div><div class="name">课堂冻结</div><div class="desc">暂停讲课 / 清理冲突 TTS</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node"><div class="icon">📝</div><div><div class="name">LLM Brief</div><div class="desc">转成课堂可消费问题</div></div></div>
+            </div>
+            <div class="flow" style="margin-top: 12px;">
+              <div class="flow-node"><div class="icon">🔁</div><div><div class="name">回灌课堂</div><div class="desc">走原 sendMessage 路径</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node"><div class="icon">🧠</div><div><div class="name">多智能体继续</div><div class="desc">不重写 teacher / student orchestration</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node"><div class="icon">✨</div><div><div class="name">产品化 UI</div><div class="desc">浮窗拖拽、模式提示、助教形象</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">Interaction Design</div>
+          <h1>课堂与助教的协作流程</h1>
+          <p>核心原则：不改原课堂主流程，只在旁边开一条“助教支线”，结束后再合并回主课堂。</p>
+        </div>
+        <div class="page-chip">02 / 05</div>
+      </div>
+      <div class="content grid-2">
+        <div class="card">
+          <div class="section-title">User Flow</div>
+          <svg class="timeline-svg" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#5b6cff" stop-opacity="0.16"/><stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.1"/></linearGradient>
+              <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.16"/><stop offset="100%" stop-color="#14b8a6" stop-opacity="0.1"/></linearGradient>
+              <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.16"/><stop offset="100%" stop-color="#5b6cff" stop-opacity="0.1"/></linearGradient>
+            </defs>
+            <path d="M90 110 H670" stroke="#d9e4f3" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="120" cy="110" r="18" fill="#5b6cff"/><circle cx="290" cy="110" r="18" fill="#0ea5e9"/><circle cx="460" cy="110" r="18" fill="#10b981"/><circle cx="630" cy="110" r="18" fill="#7c3aed"/>
+            <rect x="52" y="150" width="136" height="132" rx="24" fill="url(#g1)" stroke="#dfe7f3"/>
+            <rect x="222" y="42" width="136" height="132" rx="24" fill="url(#g1)" stroke="#dfe7f3"/>
+            <rect x="392" y="150" width="136" height="132" rx="24" fill="url(#g2)" stroke="#dfe7f3"/>
+            <rect x="562" y="42" width="136" height="132" rx="24" fill="url(#g3)" stroke="#dfe7f3"/>
+            <text x="120" y="200" text-anchor="middle" font-size="30">🔌</text><text x="120" y="228" text-anchor="middle" font-size="16" font-weight="700" fill="#142033">连接助教</text><text x="120" y="250" text-anchor="middle" font-size="12" fill="#5f6f87">课程继续中</text>
+            <text x="290" y="92" text-anchor="middle" font-size="30">🎙</text><text x="290" y="120" text-anchor="middle" font-size="16" font-weight="700" fill="#142033">开始请教</text><text x="290" y="142" text-anchor="middle" font-size="12" fill="#5f6f87">课堂暂停 / 抢占音频地板</text>
+            <text x="460" y="200" text-anchor="middle" font-size="30">🧾</text><text x="460" y="228" text-anchor="middle" font-size="16" font-weight="700" fill="#142033">Brief 整理</text><text x="460" y="250" text-anchor="middle" font-size="12" fill="#5f6f87">侧会话 → 课堂问题</text>
+            <text x="630" y="92" text-anchor="middle" font-size="30">🏫</text><text x="630" y="120" text-anchor="middle" font-size="16" font-weight="700" fill="#142033">返回课堂</text><text x="630" y="142" text-anchor="middle" font-size="12" fill="#5f6f87">原多智能体继续推进</text>
+            <path d="M290 174 C290 240, 460 84, 460 150" fill="none" stroke="#c4d3e8" stroke-width="3" stroke-dasharray="8 8"/>
+            <path d="M460 282 C460 346, 630 208, 630 174" fill="none" stroke="#c4d3e8" stroke-width="3" stroke-dasharray="8 8"/>
+          </svg>
+          <div class="legend">
+            <div class="legend-item"><span class="legend-swatch" style="background:#5b6cff;"></span> 连接只是待命，不暂停课堂</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:#0ea5e9;"></span> 真正切入助教模式才暂停课堂</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:#10b981;"></span> 侧会话内容通过 brief 合并回主线</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">State Ownership</div>
+          <div class="mini-stack" style="margin-top: 12px;">
+            <div class="mini-card"><div class="dot"></div><div><b>`idle`</b><span>课堂正常，助教可连接但不抢占课堂</span></div></div>
+            <div class="mini-card"><div class="dot"></div><div><b>`handRaiseActive`</b><span>请教助教中，lecture / discussion callbacks 全部 gated</span></div></div>
+            <div class="mini-card"><div class="dot"></div><div><b>`briefing`</b><span>调用 `/api/voice-brief` 生成课堂可消费内容</span></div></div>
+            <div class="mini-card"><div class="dot"></div><div><b>`handoff`</b><span>把 brief 走原 `sendMessage` / `handleUserInterrupt` 路径喂回课堂</span></div></div>
+          </div>
+          <div style="margin-top:18px;" class="boundary">
+            <h4>UI 语义也做了重构</h4>
+            <div class="chips">
+              <div class="chip">连接助教</div><div class="chip">开始请教助教</div><div class="chip">结束请教，回到课堂</div>
+              <div class="chip">课堂已暂停 / 课程继续中</div><div class="chip">助教浮窗可拖拽</div><div class="chip">延迟显示移除</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">Technical Architecture</div>
+          <h1>技术改造图</h1>
+          <p>在不改原课堂主引擎的前提下，新增一层 realtime assistant 协议与侧会话编排。</p>
+        </div>
+        <div class="page-chip">03 / 05</div>
+      </div>
+      <div class="content grid-2">
+        <div class="card">
+          <div class="section-title">Frontend Architecture</div>
+          <svg class="arch-svg" viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="fg1" x1="0" x2="1"><stop offset="0%" stop-color="#5b6cff" stop-opacity="0.18"/><stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.08"/></linearGradient>
+              <linearGradient id="fg2" x1="0" x2="1"><stop offset="0%" stop-color="#10b981" stop-opacity="0.18"/><stop offset="100%" stop-color="#14b8a6" stop-opacity="0.08"/></linearGradient>
+            </defs>
+            <rect x="24" y="36" width="230" height="128" rx="28" fill="url(#fg1)" stroke="#dfe7f3"/>
+            <text x="48" y="72" font-size="15" font-weight="800" fill="#5b6cff">Stage Orchestrator</text>
+            <text x="48" y="102" font-size="13" fill="#142033">voiceFloorState</text>
+            <text x="48" y="124" font-size="12" fill="#5f6f87">pause lecture / clear chat / restore classroom</text>
+            <text x="48" y="146" font-size="12" fill="#5f6f87">gate live callbacks while assistant owns floor</text>
+            <rect x="24" y="220" width="230" height="128" rx="28" fill="url(#fg1)" stroke="#dfe7f3"/>
+            <text x="48" y="256" font-size="15" font-weight="800" fill="#0ea5e9">Voice Panel + Hook</text>
+            <text x="48" y="286" font-size="13" fill="#142033">local side-session transcript</text>
+            <text x="48" y="308" font-size="12" fill="#5f6f87">PTT / transcript / current response / disconnect snapshot</text>
+            <text x="48" y="330" font-size="12" fill="#5f6f87">session_config + update_context</text>
+            <rect x="314" y="128" width="160" height="128" rx="28" fill="url(#fg2)" stroke="#dfe7f3"/>
+            <text x="338" y="164" font-size="15" font-weight="800" fill="#10b981">voice-brief API</text>
+            <text x="338" y="194" font-size="13" fill="#142033">side session → brief</text>
+            <text x="338" y="216" font-size="12" fill="#5f6f87">short / classroom-safe / no internal jargon</text>
+            <rect x="534" y="36" width="198" height="128" rx="28" fill="url(#fg2)" stroke="#dfe7f3"/>
+            <text x="558" y="72" font-size="15" font-weight="800" fill="#7c3aed">Classroom Engine</text>
+            <text x="558" y="102" font-size="13" fill="#142033">Playback + Multi-Agent</text>
+            <text x="558" y="124" font-size="12" fill="#5f6f87">teacher / student / discussion TTS / chat session</text>
+            <rect x="534" y="220" width="198" height="128" rx="28" fill="url(#fg1)" stroke="#dfe7f3"/>
+            <text x="558" y="256" font-size="15" font-weight="800" fill="#5b6cff">Realtime Provider Layer</text>
+            <text x="558" y="286" font-size="13" fill="#142033">voxlabs / doubao / openai / gemini</text>
+            <text x="558" y="308" font-size="12" fill="#5f6f87">registry / store / settings / server sync</text>
+            <path d="M254 100 H314" stroke="#b6c6dd" stroke-width="4" stroke-linecap="round"/>
+            <path d="M254 284 H314" stroke="#b6c6dd" stroke-width="4" stroke-linecap="round"/>
+            <path d="M474 192 H534" stroke="#b6c6dd" stroke-width="4" stroke-linecap="round"/>
+            <path d="M474 192 C520 192, 500 284, 534 284" fill="none" stroke="#b6c6dd" stroke-width="4"/>
+            <circle cx="286" cy="100" r="8" fill="#5b6cff"/><circle cx="286" cy="284" r="8" fill="#0ea5e9"/><circle cx="504" cy="192" r="8" fill="#10b981"/>
+          </svg>
+        </div>
+        <div class="card">
+          <div class="section-title">Technical Layers Delivered</div>
+          <div class="grid-3">
+            <div class="boundary"><h4>Runtime</h4><div class="chips"><div class="chip">Stage gating</div><div class="chip">audio floor release</div><div class="chip">discussionTTS cleanup</div><div class="chip">lecture pause/resume</div></div></div>
+            <div class="boundary"><h4>Protocol</h4><div class="chips"><div class="chip">WebSocket connect</div><div class="chip">session_config</div><div class="chip">update_context</div><div class="chip">provider/model routing</div></div></div>
+            <div class="boundary"><h4>Persistence</h4><div class="chips"><div class="chip">settings slice</div><div class="chip">server provider sync</div><div class="chip">realtime registry</div><div class="chip">default models</div></div></div>
+          </div>
+          <div style="margin-top: 16px;" class="compare-block">
+            <div class="compare-head"><strong>Recent protocol enhancement</strong><span class="pill blue">new</span></div>
+            <div class="flow" style="margin-top: 0;">
+              <div class="flow-node" style="min-height: 120px;"><div class="icon">⚙</div><div><div class="name">session_config</div><div class="desc">system_prompt + context + max_tokens</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node" style="min-height: 120px;"><div class="icon">📄</div><div><div class="name">slide context</div><div class="desc">课程名 / 章节 / 页码 / 讲稿摘要</div></div></div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-node" style="min-height: 120px;"><div class="icon">🔄</div><div><div class="name">update_context</div><div class="desc">切页自动同步给 server 助教</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">What We Preserved</div>
+          <h1>我们特意没有动的部分</h1>
+          <p>这次不是重写 OpenMAIC，而是在课堂旁边加一条“可插拔助教支线”。</p>
+        </div>
+        <div class="page-chip">04 / 05</div>
+      </div>
+      <div class="content">
+        <div class="boundary-grid">
+          <div class="card"><div class="section-title">Preserved Core</div><div class="chips"><div class="chip">teacher / student orchestration</div><div class="chip">SSE discussion generation</div><div class="chip">classroom chat session structure</div><div class="chip">roundtable interaction model</div><div class="chip">discussion TTS queue semantics</div><div class="chip">playback engine main flow</div></div></div>
+          <div class="card"><div class="section-title">Added Overlay Layer</div><div class="chips"><div class="chip">side-session transcript</div><div class="chip">voice brief API</div><div class="chip">floating assistant panel</div><div class="chip">mode switch semantics</div><div class="chip">multi-provider realtime config</div><div class="chip">slide-aware assistant context</div></div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="section-title">Boundary Diagram</div>
+            <svg class="arch-svg" viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
+              <rect x="28" y="40" width="300" height="244" rx="32" fill="#ffffff" stroke="#dfe7f3" stroke-width="2"/>
+              <rect x="52" y="76" width="252" height="76" rx="20" fill="rgba(91,108,255,0.10)" stroke="#dfe7f3"/>
+              <rect x="52" y="174" width="252" height="76" rx="20" fill="rgba(14,165,233,0.10)" stroke="#dfe7f3"/>
+              <text x="70" y="66" font-size="14" font-weight="800" fill="#5b6cff">Original OpenMAIC</text>
+              <text x="78" y="108" font-size="15" font-weight="700" fill="#142033">Playback + Classroom</text>
+              <text x="78" y="128" font-size="12" fill="#5f6f87">lecture narration / scene flow / teacher-student logic</text>
+              <text x="78" y="206" font-size="15" font-weight="700" fill="#142033">Roundtable + Discussion</text>
+              <text x="78" y="226" font-size="12" fill="#5f6f87">live QA / SSE / TTS queue / existing interaction contract</text>
+              <rect x="432" y="40" width="300" height="244" rx="32" fill="#ffffff" stroke="#dfe7f3" stroke-width="2"/>
+              <rect x="456" y="76" width="252" height="76" rx="20" fill="rgba(16,185,129,0.10)" stroke="#dfe7f3"/>
+              <rect x="456" y="174" width="252" height="76" rx="20" fill="rgba(124,58,237,0.10)" stroke="#dfe7f3"/>
+              <text x="474" y="66" font-size="14" font-weight="800" fill="#10b981">New Overlay</text>
+              <text x="482" y="108" font-size="15" font-weight="700" fill="#142033">Realtime Assistant Side Session</text>
+              <text x="482" y="128" font-size="12" fill="#5f6f87">PTT / private ask / low latency / prompt+context injection</text>
+              <text x="482" y="206" font-size="15" font-weight="700" fill="#142033">Handoff + Provider Layer</text>
+              <text x="482" y="226" font-size="12" fill="#5f6f87">brief merge / provider abstraction / future gateway routing</text>
+              <path d="M328 122 H432" stroke="#bccce3" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 10"/>
+              <path d="M432 212 H328" stroke="#bccce3" stroke-width="5" stroke-linecap="round" stroke-dasharray="10 10"/>
+              <text x="350" y="108" font-size="12" fill="#7c8aa1">pause / resume</text><text x="348" y="248" font-size="12" fill="#7c8aa1">brief handoff</text>
+            </svg>
+          </div>
+          <div class="card">
+            <div class="section-title">Product-Level Outcome</div>
+            <div class="mini-stack">
+              <div class="mini-card"><div class="dot"></div><div><b>实时语音更像“助教”</b><span>不是老师，不和课堂主讲人格竞争</span></div></div>
+              <div class="mini-card"><div class="dot"></div><div><b>课堂主线更稳定</b><span>原多智能体逻辑基本不动，只接受 brief 输入</span></div></div>
+              <div class="mini-card"><div class="dot"></div><div><b>后续扩展面更宽</b><span>支持多 realtime backend、个性 prompt、服务端 relay</span></div></div>
+              <div class="mini-card"><div class="dot"></div><div><b>上下文相关性更强</b><span>server 可吃 system_prompt 与动态 context，不再像通用客服</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="slide">
+      <div class="topbar">
+        <div class="title-wrap">
+          <div class="eyebrow">Roadmap</div>
+          <h1>下一层会走向哪里</h1>
+          <p>当前完成的是“产品形态 + 技术挂点”。下一步会从个人助教与服务端能力做深。</p>
+        </div>
+        <div class="page-chip">05 / 05</div>
+      </div>
+      <div class="content grid-2">
+        <div class="card">
+          <div class="section-title">Delivered vs Next</div>
+          <div class="compare">
+            <div class="compare-block"><div class="compare-head"><strong>Delivered Now</strong><span class="pill green">done</span></div><div class="chips"><div class="chip">TA product role</div><div class="chip">voice floor state machine</div><div class="chip">brief handoff</div><div class="chip">multi-provider config</div><div class="chip">UI polish</div><div class="chip">session_config / update_context</div></div></div>
+            <div class="compare-block"><div class="compare-head"><strong>Next Layer</strong><span class="pill gold">future</span></div><div class="chips"><div class="chip">preuser-first personal TA</div><div class="chip">server-side grounding / RAG</div><div class="chip">relay per vendor</div><div class="chip">auth & tenant isolation</div><div class="chip">subscription / SDK</div><div class="chip">custom assistant prompt UI</div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-title">North Star</div>
+          <svg class="timeline-svg" viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg">
+            <path d="M86 208 C184 82, 298 82, 380 208 S566 334, 674 118" fill="none" stroke="#cbd8ea" stroke-width="6" stroke-linecap="round"/>
+            <circle cx="96" cy="198" r="16" fill="#5b6cff"/><circle cx="256" cy="126" r="16" fill="#0ea5e9"/><circle cx="432" cy="230" r="16" fill="#10b981"/><circle cx="664" cy="128" r="16" fill="#7c3aed"/>
+            <rect x="42" y="222" width="116" height="84" rx="20" fill="rgba(91,108,255,0.12)" stroke="#dfe7f3"/>
+            <rect x="198" y="24" width="116" height="84" rx="20" fill="rgba(14,165,233,0.12)" stroke="#dfe7f3"/>
+            <rect x="372" y="246" width="128" height="84" rx="20" fill="rgba(16,185,129,0.12)" stroke="#dfe7f3"/>
+            <rect x="590" y="24" width="128" height="84" rx="20" fill="rgba(124,58,237,0.12)" stroke="#dfe7f3"/>
+            <text x="100" y="258" text-anchor="middle" font-size="14" font-weight="700" fill="#142033">当前完成</text><text x="100" y="280" text-anchor="middle" font-size="11" fill="#5f6f87">realtime TA overlay</text>
+            <text x="256" y="60" text-anchor="middle" font-size="14" font-weight="700" fill="#142033">更强相关性</text><text x="256" y="82" text-anchor="middle" font-size="11" fill="#5f6f87">prompt + slide context</text>
+            <text x="436" y="282" text-anchor="middle" font-size="14" font-weight="700" fill="#142033">个人助教化</text><text x="436" y="304" text-anchor="middle" font-size="11" fill="#5f6f87">preuser / retrieval / memory</text>
+            <text x="654" y="60" text-anchor="middle" font-size="14" font-weight="700" fill="#142033">平台化</text><text x="654" y="82" text-anchor="middle" font-size="11" fill="#5f6f87">auth / billing / sdk / relay</text>
+          </svg>
+          <p class="section-note">方向很明确：先把“课堂中的私人助教”形态跑顺，再把它升级成带用户隔离、可扩展后端、可商业化的 realtime assistant platform。</p>
+        </div>
+      </div>
+    </section>
+    <div class="footer-hint">Use ← → / Space / Click Buttons</div>
+    <div class="nav"><button id="prevBtn" aria-label="Previous Slide">‹</button><button id="nextBtn" aria-label="Next Slide">›</button></div>
+  </div>
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    let current = 0;
+    function renderSlide(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === current));
+    }
+    document.getElementById('prevBtn').addEventListener('click', () => renderSlide(current - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => renderSlide(current + 1));
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight' || event.key === ' ' || event.key === 'PageDown') {
+        event.preventDefault();
+        renderSlide(current + 1);
+      }
+      if (event.key === 'ArrowLeft' || event.key === 'PageUp') {
+        event.preventDefault();
+        renderSlide(current - 1);
+      }
+      if (event.key === 'Home') renderSlide(0);
+      if (event.key === 'End') renderSlide(slides.length - 1);
+    });
+  </script>
+</body>
+</html>

@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useChatSessions } from './use-chat-sessions';
 import { SessionList } from './session-list';
 import { LectureNotesView } from './lecture-notes-view';
+import { VoxLabsVoicePanel } from '@/components/audio/voxlabs-voice-panel';
 
 interface ChatAreaProps {
   className?: string;
@@ -37,6 +38,9 @@ interface ChatAreaProps {
   /** When provided and returns true, StreamBuffer holds on the current text item after reveal. */
   shouldHoldAfterReveal?: () => { holding: boolean; segmentDone: number } | boolean;
   currentSceneId?: string | null;
+  /** Called when VoxLabs PTT produces transcription — parent should feed into sendMessage */
+  onVoiceTranscription?: (text: string) => void;
+  showVoicePanel?: boolean;
 }
 
 export interface ChatAreaRef {
@@ -82,6 +86,8 @@ export const ChatArea = forwardRef<ChatAreaRef, ChatAreaProps>(
       onSegmentSealed,
       shouldHoldAfterReveal,
       currentSceneId,
+      onVoiceTranscription: _onVoiceTranscription,
+      showVoicePanel = true,
     },
     ref,
   ) => {
@@ -329,6 +335,12 @@ export const ChatArea = forwardRef<ChatAreaRef, ChatAreaProps>(
                   </>
                 )}
               </div>
+
+              {showVoicePanel && (
+                <div className="shrink-0 border-t border-gray-100 dark:border-gray-800 p-3 bg-gray-50/50 dark:bg-gray-900/50">
+                  <VoxLabsVoicePanel disabled={false} />
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

@@ -1,8 +1,10 @@
 import type { ProviderId, ModelInfo, ProviderType } from '@/lib/types/provider';
+import type { RealtimeAssistantProviderId } from '@/lib/realtime-assistant/types';
 
 export type SettingsSection =
   | 'general'
   | 'providers'
+  | 'realtime-assistant'
   | 'agents'
   | 'tts'
   | 'asr'
@@ -46,4 +48,8 @@ export interface EditingModel {
   providerId: ProviderId;
   modelIndex: number | null; // null for new model
   model: ModelInfo;
+}
+
+export interface RealtimeAssistantEditingConfig {
+  providerId: RealtimeAssistantProviderId;
 }

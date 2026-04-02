@@ -27,6 +27,7 @@ interface ServerConfig {
   providers: Record<string, ServerProviderEntry>;
   tts: Record<string, ServerProviderEntry>;
   asr: Record<string, ServerProviderEntry>;
+  realtime: Record<string, ServerProviderEntry>;
   pdf: Record<string, ServerProviderEntry>;
   image: Record<string, ServerProviderEntry>;
   video: Record<string, ServerProviderEntry>;
@@ -66,6 +67,13 @@ const ASR_ENV_MAP: Record<string, string> = {
   ASR_QWEN: 'qwen-asr',
 };
 
+const REALTIME_ENV_MAP: Record<string, string> = {
+  REALTIME_VOXLABS: 'voxlabs',
+  REALTIME_DOUBAO: 'doubao-realtime',
+  REALTIME_OPENAI: 'openai-realtime',
+  REALTIME_GEMINI: 'gemini-live',
+};
+
 const PDF_ENV_MAP: Record<string, string> = {
   PDF_UNPDF: 'unpdf',
   PDF_MINERU: 'mineru',
@@ -100,6 +108,7 @@ type YamlData = Partial<{
   providers: Record<string, Partial<ServerProviderEntry>>;
   tts: Record<string, Partial<ServerProviderEntry>>;
   asr: Record<string, Partial<ServerProviderEntry>>;
+  realtime: Record<string, Partial<ServerProviderEntry>>;
   pdf: Record<string, Partial<ServerProviderEntry>>;
   image: Record<string, Partial<ServerProviderEntry>>;
   video: Record<string, Partial<ServerProviderEntry>>;
@@ -192,6 +201,7 @@ function buildConfig(yamlData: YamlData): ServerConfig {
     providers: loadEnvSection(LLM_ENV_MAP, yamlData.providers),
     tts: loadEnvSection(TTS_ENV_MAP, yamlData.tts),
     asr: loadEnvSection(ASR_ENV_MAP, yamlData.asr),
+    realtime: loadEnvSection(REALTIME_ENV_MAP, yamlData.realtime),
     pdf: loadEnvSection(PDF_ENV_MAP, yamlData.pdf, { requiresBaseUrl: true }),
     image: loadEnvSection(IMAGE_ENV_MAP, yamlData.image),
     video: loadEnvSection(VIDEO_ENV_MAP, yamlData.video),
@@ -204,6 +214,7 @@ function logConfig(config: ServerConfig, label: string): void {
     Object.keys(config.providers).length,
     Object.keys(config.tts).length,
     Object.keys(config.asr).length,
+    Object.keys(config.realtime).length,
     Object.keys(config.pdf).length,
     Object.keys(config.image).length,
     Object.keys(config.video).length,
@@ -211,7 +222,7 @@ function logConfig(config: ServerConfig, label: string): void {
   ];
   if (counts.some((c) => c > 0)) {
     log.info(
-      `[ServerProviderConfig] Loaded (${label}): ${counts[0]} LLM, ${counts[1]} TTS, ${counts[2]} ASR, ${counts[3]} PDF, ${counts[4]} Image, ${counts[5]} Video, ${counts[6]} WebSearch providers`,
+      `[ServerProviderConfig] Loaded (${label}): ${counts[0]} LLM, ${counts[1]} TTS, ${counts[2]} ASR, ${counts[3]} Realtime, ${counts[4]} PDF, ${counts[5]} Image, ${counts[6]} Video, ${counts[7]} WebSearch providers`,
     );
   }
 }
@@ -306,6 +317,37 @@ export function resolveASRApiKey(providerId: string, clientKey?: string): string
 export function resolveASRBaseUrl(providerId: string, clientBaseUrl?: string): string | undefined {
   if (clientBaseUrl) return clientBaseUrl;
   return getConfig().asr[providerId]?.baseUrl;
+}
+
+// ---------------------------------------------------------------------------
+// Public API — Realtime Assistant
+// ---------------------------------------------------------------------------
+
+export function getServerRealtimeAssistantProviders(): Record<
+  string,
+  { models?: string[]; baseUrl?: string }
+> {
+  const cfg = getConfig();
+  const result: Record<string, { models?: string[]; baseUrl?: string }> = {};
+  for (const [id, entry] of Object.entries(cfg.realtime)) {
+    result[id] = {};
+    if (entry.models && entry.models.length > 0) result[id].models = entry.models;
+    if (entry.baseUrl) result[id].baseUrl = entry.baseUrl;
+  }
+  return result;
+}
+
+export function resolveRealtimeAssistantApiKey(providerId: string, clientKey?: string): string {
+  if (clientKey) return clientKey;
+  return getConfig().realtime[providerId]?.apiKey || '';
+}
+
+export function resolveRealtimeAssistantBaseUrl(
+  providerId: string,
+  clientBaseUrl?: string,
+): string | undefined {
+  if (clientBaseUrl) return clientBaseUrl;
+  return getConfig().realtime[providerId]?.baseUrl;
 }
 
 // ---------------------------------------------------------------------------

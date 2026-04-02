@@ -192,6 +192,20 @@ export const settingsZhCN = {
     currentlyUsing: '当前使用',
     // TTS settings
     ttsSettings: '语音合成',
+    realtimeAssistantSettings: '实时助教',
+    realtimeAssistantModeTitle: '实时助教接入',
+    realtimeAssistantApiKey: '实时助教 API 密钥',
+    realtimeAssistantModel: '实时助教模型',
+    realtimeAssistantRelayHint:
+      '豆包、OpenAI Realtime、Gemini Live 建议通过你自己的 relay / gateway 接入，前端只连统一的 WebSocket 接口。',
+    realtimeAssistantDirectHint: '当前 provider 支持直接连接到兼容的 WebSocket 语音网关。',
+    realtimeAssistantEndpointHintRelay: '这里填写你统一的实时助教 relay / gateway WebSocket 地址。',
+    realtimeAssistantEndpointHintDirect: '这里填写兼容的 WebSocket 语音服务地址。',
+    realtimeAssistantRouting: '路由方式',
+    realtimeAssistantRoutingDesc:
+      '助教面板会使用当前选中的实时助教 provider 配置，课堂主模型与语音助教可独立配置。',
+    realtimeAssistantActiveProvider: '当前这个 provider 已经被设为默认实时助教。',
+    realtimeAssistantInactiveProvider: '选中后它将成为默认实时助教 provider。',
     // ASR settings
     asrSettings: '语音识别',
     // Audio settings (legacy)
@@ -230,6 +244,10 @@ export const settingsZhCN = {
     providerElevenLabsTTS: 'ElevenLabs TTS',
     providerMiniMaxTTS: 'MiniMax TTS',
     providerBrowserNativeTTS: '浏览器原生 TTS',
+    providerVoxLabsRealtime: 'VoxLabs 实时助教',
+    providerDoubaoRealtime: '豆包 Realtime',
+    providerOpenAIRealtime: 'OpenAI Realtime',
+    providerGeminiLive: 'Gemini Live',
     providerOpenAIWhisper: 'OpenAI ASR (gpt-4o-mini-transcribe)',
     providerBrowserNative: '浏览器原生 ASR',
     providerQwenASR: 'Qwen ASR（阿里云百炼）',
@@ -789,6 +807,23 @@ export const settingsEnUS = {
     currentlyUsing: 'Currently using',
     // TTS settings
     ttsSettings: 'Text-to-Speech',
+    realtimeAssistantSettings: 'Realtime Assistant',
+    realtimeAssistantModeTitle: 'Realtime Assistant Access',
+    realtimeAssistantApiKey: 'Realtime Assistant API Key',
+    realtimeAssistantModel: 'Realtime Assistant Model',
+    realtimeAssistantRelayHint:
+      'For Doubao, OpenAI Realtime, and Gemini Live, prefer connecting through your own relay or gateway so the frontend only talks to one normalized WebSocket interface.',
+    realtimeAssistantDirectHint:
+      'This provider can connect directly to a compatible WebSocket voice gateway.',
+    realtimeAssistantEndpointHintRelay:
+      'Enter the WebSocket URL of your unified realtime assistant relay or gateway.',
+    realtimeAssistantEndpointHintDirect:
+      'Enter the WebSocket URL of a compatible voice service.',
+    realtimeAssistantRouting: 'Routing',
+    realtimeAssistantRoutingDesc:
+      'The assistant panel uses the selected realtime-assistant provider, while classroom models stay independently configured.',
+    realtimeAssistantActiveProvider: 'This provider is currently the default realtime assistant.',
+    realtimeAssistantInactiveProvider: 'Selecting it here will make it the default realtime assistant provider.',
     // ASR settings
     asrSettings: 'Speech Recognition',
     // Audio settings (legacy)
@@ -828,6 +863,10 @@ export const settingsEnUS = {
     providerElevenLabsTTS: 'ElevenLabs TTS',
     providerMiniMaxTTS: 'MiniMax TTS',
     providerBrowserNativeTTS: 'Browser Native TTS',
+    providerVoxLabsRealtime: 'VoxLabs Realtime Assistant',
+    providerDoubaoRealtime: 'Doubao Realtime',
+    providerOpenAIRealtime: 'OpenAI Realtime',
+    providerGeminiLive: 'Gemini Live',
     providerOpenAIWhisper: 'OpenAI ASR (gpt-4o-mini-transcribe)',
     providerBrowserNative: 'Browser Native ASR',
     providerQwenASR: 'Qwen ASR (Alibaba Cloud Bailian)',

@@ -19,6 +19,11 @@ import { WEB_SEARCH_PROVIDERS } from '@/lib/web-search/constants';
 import type { WebSearchProviderId } from '@/lib/web-search/types';
 import { createLogger } from '@/lib/logger';
 import { validateProvider, validateModel } from '@/lib/store/settings-validation';
+import type {
+  RealtimeAssistantProviderId,
+  RealtimeAssistantSettingsConfig,
+} from '@/lib/realtime-assistant/types';
+import { REALTIME_ASSISTANT_PROVIDERS } from '@/lib/realtime-assistant/constants';
 
 const log = createLogger('Settings');
 
@@ -71,6 +76,13 @@ export interface SettingsState {
       isServerConfigured?: boolean;
       serverBaseUrl?: string;
     }
+  >;
+
+  // Realtime assistant settings
+  realtimeAssistantProviderId: RealtimeAssistantProviderId;
+  realtimeAssistantProvidersConfig: Record<
+    RealtimeAssistantProviderId,
+    RealtimeAssistantSettingsConfig
   >;
 
   // PDF settings
@@ -206,6 +218,11 @@ export interface SettingsState {
   ) => void;
   setTTSEnabled: (enabled: boolean) => void;
   setASREnabled: (enabled: boolean) => void;
+  setRealtimeAssistantProvider: (providerId: RealtimeAssistantProviderId) => void;
+  setRealtimeAssistantProviderConfig: (
+    providerId: RealtimeAssistantProviderId,
+    config: Partial<RealtimeAssistantSettingsConfig>,
+  ) => void;
 
   // PDF actions
   setPDFProvider: (providerId: PDFProviderId) => void;
@@ -346,6 +363,36 @@ const getDefaultWebSearchConfig = () => ({
   } as Record<WebSearchProviderId, { apiKey: string; baseUrl: string; enabled: boolean }>,
 });
 
+const getDefaultRealtimeAssistantConfig = () => ({
+  realtimeAssistantProviderId: 'voxlabs' as RealtimeAssistantProviderId,
+  realtimeAssistantProvidersConfig: {
+    voxlabs: {
+      apiKey: '',
+      baseUrl: '',
+      enabled: true,
+      modelId: REALTIME_ASSISTANT_PROVIDERS.voxlabs.defaultModelId,
+    },
+    'doubao-realtime': {
+      apiKey: '',
+      baseUrl: '',
+      enabled: false,
+      modelId: REALTIME_ASSISTANT_PROVIDERS['doubao-realtime'].defaultModelId,
+    },
+    'openai-realtime': {
+      apiKey: '',
+      baseUrl: '',
+      enabled: false,
+      modelId: REALTIME_ASSISTANT_PROVIDERS['openai-realtime'].defaultModelId,
+    },
+    'gemini-live': {
+      apiKey: '',
+      baseUrl: '',
+      enabled: false,
+      modelId: REALTIME_ASSISTANT_PROVIDERS['gemini-live'].defaultModelId,
+    },
+  } as Record<RealtimeAssistantProviderId, RealtimeAssistantSettingsConfig>,
+});
+
 /**
  * Check whether a provider ID exists in the given provider registry.
  */
@@ -364,6 +411,7 @@ function ensureValidProviderSelections(state: Partial<SettingsState>): void {
   const defaultImageConfig = getDefaultImageConfig();
   const defaultVideoConfig = getDefaultVideoConfig();
   const defaultWebSearchConfig = getDefaultWebSearchConfig();
+  const defaultRealtimeConfig = getDefaultRealtimeAssistantConfig();
 
   if (!hasProviderId(PDF_PROVIDERS, state.pdfProviderId)) {
     state.pdfProviderId = defaultPdfConfig.pdfProviderId;
@@ -387,6 +435,10 @@ function ensureValidProviderSelections(state: Partial<SettingsState>): void {
 
   if (!hasProviderId(ASR_PROVIDERS, state.asrProviderId)) {
     state.asrProviderId = defaultAudioConfig.asrProviderId;
+  }
+
+  if (!hasProviderId(REALTIME_ASSISTANT_PROVIDERS, state.realtimeAssistantProviderId)) {
+    state.realtimeAssistantProviderId = defaultRealtimeConfig.realtimeAssistantProviderId;
   }
 }
 
@@ -453,6 +505,17 @@ function ensureBuiltInVideoProviders(state: Partial<SettingsState>): void {
     const providerId = pid as VideoProviderId;
     if (!state.videoProvidersConfig![providerId]) {
       state.videoProvidersConfig![providerId] = defaultConfig[providerId];
+    }
+  });
+}
+
+function ensureBuiltInRealtimeAssistantProviders(state: Partial<SettingsState>): void {
+  if (!state.realtimeAssistantProvidersConfig) return;
+  const defaultConfig = getDefaultRealtimeAssistantConfig().realtimeAssistantProvidersConfig;
+  Object.keys(REALTIME_ASSISTANT_PROVIDERS).forEach((pid) => {
+    const providerId = pid as RealtimeAssistantProviderId;
+    if (!state.realtimeAssistantProvidersConfig![providerId]) {
+      state.realtimeAssistantProvidersConfig![providerId] = defaultConfig[providerId];
     }
   });
 }
@@ -535,6 +598,7 @@ export const useSettingsStore = create<SettingsState>()(
       const defaultImageConfig = getDefaultImageConfig();
       const defaultVideoConfig = getDefaultVideoConfig();
       const defaultWebSearchConfig = getDefaultWebSearchConfig();
+      const defaultRealtimeAssistantConfig = getDefaultRealtimeAssistantConfig();
 
       return {
         // Initial state (use migrated data if available)
@@ -582,6 +646,9 @@ export const useSettingsStore = create<SettingsState>()(
 
         // Web Search settings (use defaults)
         ...defaultWebSearchConfig,
+
+        // Realtime assistant settings (use defaults)
+        ...defaultRealtimeAssistantConfig,
 
         // Actions
         setModel: (providerId, modelId) => set({ providerId, modelId }),
@@ -734,6 +801,17 @@ export const useSettingsStore = create<SettingsState>()(
         },
         setTTSEnabled: (enabled) => set({ ttsEnabled: enabled }),
         setASREnabled: (enabled) => set({ asrEnabled: enabled }),
+        setRealtimeAssistantProvider: (providerId) => set({ realtimeAssistantProviderId: providerId }),
+        setRealtimeAssistantProviderConfig: (providerId, config) =>
+          set((state) => ({
+            realtimeAssistantProvidersConfig: {
+              ...state.realtimeAssistantProvidersConfig,
+              [providerId]: {
+                ...state.realtimeAssistantProvidersConfig[providerId],
+                ...config,
+              },
+            },
+          })),
 
         // Web Search actions
         setWebSearchProvider: (providerId) => set({ webSearchProviderId: providerId }),
@@ -761,6 +839,7 @@ export const useSettingsStore = create<SettingsState>()(
               image: Record<string, { baseUrl?: string }>;
               video: Record<string, { baseUrl?: string }>;
               webSearch: Record<string, { baseUrl?: string }>;
+              realtime: Record<string, { models?: string[]; baseUrl?: string }>;
             };
 
             set((state) => {
@@ -936,6 +1015,32 @@ export const useSettingsStore = create<SettingsState>()(
                 }
               }
 
+              // Merge Realtime Assistant config
+              const newRealtimeConfig = { ...state.realtimeAssistantProvidersConfig };
+              for (const pid of Object.keys(newRealtimeConfig)) {
+                const key = pid as RealtimeAssistantProviderId;
+                if (newRealtimeConfig[key]) {
+                  newRealtimeConfig[key] = {
+                    ...newRealtimeConfig[key],
+                    isServerConfigured: false,
+                    serverBaseUrl: undefined,
+                  };
+                }
+              }
+              if (data.realtime) {
+                for (const [pid, info] of Object.entries(data.realtime)) {
+                  const key = pid as RealtimeAssistantProviderId;
+                  if (newRealtimeConfig[key]) {
+                    newRealtimeConfig[key] = {
+                      ...newRealtimeConfig[key],
+                      isServerConfigured: true,
+                      serverBaseUrl: info.baseUrl,
+                      ...(info.models?.[0] ? { modelId: info.models[0] } : {}),
+                    };
+                  }
+                }
+              }
+
               // === Validate current selections against updated configs ===
               // Build fallback: server-configured first, then client-key-only
               const buildFallback = <T extends string>(
@@ -955,6 +1060,7 @@ export const useSettingsStore = create<SettingsState>()(
               const pdfFallback = buildFallback<PDFProviderId>(newPDFConfig);
               const imageFallback = buildFallback<ImageProviderId>(newImageConfig);
               const videoFallback = buildFallback<VideoProviderId>(newVideoConfig);
+              const realtimeFallback = buildFallback<RealtimeAssistantProviderId>(newRealtimeConfig);
 
               const validLLMProvider = validateProvider(
                 state.providerId,
@@ -988,6 +1094,12 @@ export const useSettingsStore = create<SettingsState>()(
                 state.videoProviderId,
                 newVideoConfig,
                 videoFallback,
+              );
+              const validRealtimeProvider = validateProvider(
+                state.realtimeAssistantProviderId,
+                newRealtimeConfig,
+                realtimeFallback,
+                'voxlabs' as RealtimeAssistantProviderId,
               );
 
               // Auto-recover: when provider is empty but server has available ones
@@ -1046,6 +1158,7 @@ export const useSettingsStore = create<SettingsState>()(
               let autoImageModel: string | undefined;
               let autoVideoProvider: VideoProviderId | undefined;
               let autoVideoModel: string | undefined;
+              let autoRealtimeProvider: RealtimeAssistantProviderId | undefined;
               let autoImageEnabled: boolean | undefined;
               let autoVideoEnabled: boolean | undefined;
 
@@ -1101,6 +1214,14 @@ export const useSettingsStore = create<SettingsState>()(
                 if (serverVideoIds.length > 0 && !state.videoGenerationEnabled) {
                   autoVideoEnabled = true;
                 }
+
+                const serverRealtimeIds = Object.keys(data.realtime || {}) as RealtimeAssistantProviderId[];
+                if (
+                  serverRealtimeIds.length > 0 &&
+                  !newRealtimeConfig[state.realtimeAssistantProviderId]?.isServerConfigured
+                ) {
+                  autoRealtimeProvider = serverRealtimeIds[0];
+                }
               }
 
               // LLM auto-select: only on true first load (no provider selected yet)
@@ -1131,6 +1252,7 @@ export const useSettingsStore = create<SettingsState>()(
                 imageProvidersConfig: newImageConfig,
                 videoProvidersConfig: newVideoConfig,
                 webSearchProvidersConfig: newWebSearchConfig,
+                realtimeAssistantProvidersConfig: newRealtimeConfig,
                 autoConfigApplied: true,
                 // Validated selections
                 ...(validLLMProvider !== state.providerId && {
@@ -1156,6 +1278,9 @@ export const useSettingsStore = create<SettingsState>()(
                 ...(validVideoProvider !== state.videoProviderId && {
                   videoProviderId: validVideoProvider as VideoProviderId,
                 }),
+                ...(validRealtimeProvider !== state.realtimeAssistantProviderId && {
+                  realtimeAssistantProviderId: validRealtimeProvider as RealtimeAssistantProviderId,
+                }),
                 ...(validVideoModel !== state.videoModelId && {
                   videoModelId: validVideoModel,
                 }),
@@ -1178,6 +1303,7 @@ export const useSettingsStore = create<SettingsState>()(
                   videoProviderId: autoVideoProvider,
                 }),
                 ...(autoVideoModel && { videoModelId: autoVideoModel }),
+                ...(autoRealtimeProvider && { realtimeAssistantProviderId: autoRealtimeProvider }),
                 ...(autoImageEnabled !== undefined && {
                   imageGenerationEnabled: autoImageEnabled,
                 }),
@@ -1197,7 +1323,7 @@ export const useSettingsStore = create<SettingsState>()(
     },
     {
       name: 'settings-storage',
-      version: 2,
+      version: 3,
       // Migrate persisted state
       migrate: (persistedState: unknown, version: number) => {
         const state = persistedState as Partial<SettingsState>;
@@ -1215,6 +1341,7 @@ export const useSettingsStore = create<SettingsState>()(
         // Ensure image/video configs have all built-in providers
         ensureBuiltInImageProviders(state);
         ensureBuiltInVideoProviders(state);
+        ensureBuiltInRealtimeAssistantProviders(state);
 
         // Migrate from old ttsModel to new ttsProviderId
         if (state.ttsModel && !state.ttsProviderId) {
@@ -1334,6 +1461,11 @@ export const useSettingsStore = create<SettingsState>()(
           delete stateRecord.webSearchIsServerConfigured;
         }
 
+        if (!state.realtimeAssistantProvidersConfig || !state.realtimeAssistantProviderId) {
+          const defaultRealtimeAssistantConfig = getDefaultRealtimeAssistantConfig();
+          Object.assign(state, defaultRealtimeAssistantConfig);
+        }
+
         ensureValidProviderSelections(state);
 
         return state;
@@ -1345,6 +1477,7 @@ export const useSettingsStore = create<SettingsState>()(
         ensureBuiltInProviders(merged as Partial<SettingsState>);
         ensureBuiltInImageProviders(merged as Partial<SettingsState>);
         ensureBuiltInVideoProviders(merged as Partial<SettingsState>);
+        ensureBuiltInRealtimeAssistantProviders(merged as Partial<SettingsState>);
         ensureValidProviderSelections(merged as Partial<SettingsState>);
         return merged as SettingsState;
       },

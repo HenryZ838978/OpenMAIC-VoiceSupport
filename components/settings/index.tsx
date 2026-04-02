@@ -26,6 +26,7 @@ import {
   Search,
   Volume2,
   Mic,
+  Headset,
 } from 'lucide-react';
 import { useI18n } from '@/lib/hooks/use-i18n';
 import { useSettingsStore } from '@/lib/store/settings';
@@ -55,9 +56,12 @@ import { WebSearchSettings } from './web-search-settings';
 import { WEB_SEARCH_PROVIDERS } from '@/lib/web-search/constants';
 import type { WebSearchProviderId } from '@/lib/web-search/types';
 import { GeneralSettings } from './general-settings';
+import { RealtimeAssistantSettings } from './realtime-assistant-settings';
 import { ModelEditDialog } from './model-edit-dialog';
 import { AddProviderDialog, type NewProviderData } from './add-provider-dialog';
 import type { SettingsSection, EditingModel } from '@/lib/types/settings';
+import { REALTIME_ASSISTANT_PROVIDERS } from '@/lib/realtime-assistant/constants';
+import type { RealtimeAssistantProviderId } from '@/lib/realtime-assistant/types';
 
 // ─── Provider List Column (reusable) ───
 function ProviderListColumn<T extends string>({
@@ -138,6 +142,19 @@ function getASRProviderName(providerId: ASRProviderId, t: (key: string) => strin
   return names[providerId];
 }
 
+function getRealtimeAssistantProviderName(
+  providerId: RealtimeAssistantProviderId,
+  t: (key: string) => string,
+): string {
+  const names: Record<RealtimeAssistantProviderId, string> = {
+    voxlabs: t('settings.providerVoxLabsRealtime'),
+    'doubao-realtime': t('settings.providerDoubaoRealtime'),
+    'openai-realtime': t('settings.providerOpenAIRealtime'),
+    'gemini-live': t('settings.providerGeminiLive'),
+  };
+  return names[providerId];
+}
+
 // ─── Image/Video provider name helpers ───
 const IMAGE_PROVIDER_NAMES: Record<ImageProviderId, string> = {
   seedream: 'providerSeedream',
@@ -198,6 +215,10 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
   const ttsProvidersConfig = useSettingsStore((state) => state.ttsProvidersConfig);
   const asrProviderId = useSettingsStore((state) => state.asrProviderId);
   const asrProvidersConfig = useSettingsStore((state) => state.asrProvidersConfig);
+  const realtimeAssistantProviderId = useSettingsStore((state) => state.realtimeAssistantProviderId);
+  const realtimeAssistantProvidersConfig = useSettingsStore(
+    (state) => state.realtimeAssistantProvidersConfig,
+  );
 
   // Store actions
   const setModel = useSettingsStore((state) => state.setModel);
@@ -205,6 +226,9 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
   const setProvidersConfig = useSettingsStore((state) => state.setProvidersConfig);
   const setTTSProvider = useSettingsStore((state) => state.setTTSProvider);
   const setASRProvider = useSettingsStore((state) => state.setASRProvider);
+  const setRealtimeAssistantProvider = useSettingsStore(
+    (state) => state.setRealtimeAssistantProvider,
+  );
 
   // Navigation
   const [activeSection, setActiveSection] = useState<SettingsSection>('providers');
@@ -216,6 +240,8 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
     useState<ImageProviderId>(imageProviderId);
   const [selectedVideoProviderId, setSelectedVideoProviderId] =
     useState<VideoProviderId>(videoProviderId);
+  const [selectedRealtimeAssistantProviderId, setSelectedRealtimeAssistantProviderId] =
+    useState<RealtimeAssistantProviderId>(realtimeAssistantProviderId);
   // Navigate to initialSection when dialog opens
   useEffect(() => {
     if (open && initialSection) {
@@ -490,6 +516,7 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
   // Sections that show a provider list column
   const _hasProviderList = [
     'providers',
+    'realtime-assistant',
     'pdf',
     'web-search',
     'image',
@@ -529,6 +556,34 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
           );
         }
         return null;
+      case 'realtime-assistant': {
+        const provider = REALTIME_ASSISTANT_PROVIDERS[selectedRealtimeAssistantProviderId];
+        if (!provider) return null;
+        return (
+          <>
+            {provider.icon ? (
+              <img
+                src={provider.icon}
+                alt={provider.name}
+                className="w-8 h-8 rounded-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <Headset className="h-6 w-6 text-muted-foreground" />
+            )}
+            <div>
+              <h2 className="text-lg font-semibold">
+                {getRealtimeAssistantProviderName(selectedRealtimeAssistantProviderId, t)}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.realtimeAssistantSettings')}
+              </p>
+            </div>
+          </>
+        );
+      }
       case 'pdf': {
         const pdfProvider = PDF_PROVIDERS[selectedPdfProviderId];
         if (!pdfProvider) return null;
@@ -710,6 +765,19 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
             </button>
 
             <button
+              onClick={() => setActiveSection('realtime-assistant')}
+              className={cn(
+                'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-left min-w-0',
+                activeSection === 'realtime-assistant'
+                  ? 'bg-primary/10 text-primary font-medium'
+                  : 'hover:bg-muted',
+              )}
+            >
+              <Headset className="h-4 w-4 shrink-0" />
+              <span className="truncate">{t('settings.realtimeAssistantSettings')}</span>
+            </button>
+
+            <button
               onClick={() => setActiveSection('tts')}
               className={cn(
                 'w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors text-left min-w-0',
@@ -809,6 +877,32 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
                 configs={pdfProvidersConfig}
                 selectedId={selectedPdfProviderId}
                 onSelect={setSelectedPdfProviderId}
+                width={providerListWidth}
+                t={t}
+              />
+              <div
+                onMouseDown={(e) => handleResizeStart(e, 'providerList')}
+                className="flex-shrink-0 w-[5px] cursor-col-resize group flex justify-center"
+              >
+                <div className="w-px h-full bg-border group-hover:bg-primary/50 transition-colors" />
+              </div>
+            </>
+          )}
+
+          {activeSection === 'realtime-assistant' && (
+            <>
+              <ProviderListColumn
+                providers={Object.values(REALTIME_ASSISTANT_PROVIDERS).map((p) => ({
+                  id: p.id,
+                  name: getRealtimeAssistantProviderName(p.id, t),
+                  icon: p.icon,
+                }))}
+                configs={realtimeAssistantProvidersConfig}
+                selectedId={selectedRealtimeAssistantProviderId}
+                onSelect={(id) => {
+                  setSelectedRealtimeAssistantProviderId(id);
+                  setRealtimeAssistantProvider(id);
+                }}
                 width={providerListWidth}
                 t={t}
               />
@@ -977,6 +1071,12 @@ export function SettingsDialog({ open, onOpenChange, initialSection }: SettingsD
                   onAddModel={handleAddModel}
                   onResetToDefault={() => handleResetProvider(selectedProviderId)}
                   isBuiltIn={providersConfig[selectedProviderId]?.isBuiltIn ?? true}
+                />
+              )}
+
+              {activeSection === 'realtime-assistant' && (
+                <RealtimeAssistantSettings
+                  selectedProviderId={selectedRealtimeAssistantProviderId}
                 />
               )}
 
