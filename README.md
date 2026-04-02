@@ -4,6 +4,8 @@
 
 <h1 align="center">OpenMAIC + 实时语音助教</h1>
 
+![语音助教](https://github.com/user-attachments/assets/6a4974c3-0421-4c7e-9c2b-89e578572869)
+
 <p align="center">
   把 OpenMAIC 的多智能体课堂，与超低延迟实时语音能力，重构成一个更像“私人助教”的课堂交互层。
 </p>
